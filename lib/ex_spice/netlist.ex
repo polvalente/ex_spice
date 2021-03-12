@@ -5,7 +5,7 @@ defmodule ExSpice.Netlist do
 
   alias ExSpice.Netlist.StatementParser
 
-  defstruct components: [], nodes: %{"0" => 0}
+  defstruct components: [], variables: %{"0" => 0}, solution: nil
 
   def parse(contents) when is_binary(contents) do
     contents
@@ -14,15 +14,22 @@ defmodule ExSpice.Netlist do
     |> Enum.reduce_while(%__MODULE__{}, fn {line, line_number}, netlist ->
       line
       |> String.split(~r/\s/, trim: true)
-      |> StatementParser.parse(netlist.nodes)
+      |> StatementParser.parse(netlist.variables)
       |> case do
-        {:ok, component, nodes} -> {:cont, update_netlist(netlist, component, nodes)}
-        {:error, error} -> {:halt, {:error, {:invalid_line, error, line_number}}}
+        {:ok, component, variables} ->
+          {:cont, update_netlist(netlist, component, variables)}
+
+        {:error, error} ->
+          {:halt, {:error, {:invalid_line, error, line_number}}}
       end
     end)
   end
 
-  defp update_netlist(netlist, component, nodes) do
-    %{netlist | components: [component | netlist.components], nodes: nodes}
+  defp update_netlist(netlist, component, variables) do
+    %{
+      netlist
+      | components: [component | netlist.components],
+        variables: variables
+    }
   end
 end

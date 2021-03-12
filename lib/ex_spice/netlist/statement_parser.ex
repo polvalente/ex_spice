@@ -18,76 +18,87 @@ defmodule ExSpice.Netlist.StatementParser do
 
   def parse(["*" | _], _nodes), do: {:ok, nil}
 
-  def parse([<<prefix::binary-size(1), _::bitstring>> | _], _nodes)
+  def parse([<<prefix::binary-size(1), _::bitstring>> | _], _variables)
       when prefix not in @valid_line_prefixes,
       do: {:error, {:invalid_component, prefix}}
 
-  def parse([<<"V", _::bitstring>> = name, node_pos, node_neg, value_str], nodes) do
+  def parse([<<"V", id::bitstring>> = name, node_pos, node_neg, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
-      {nodes, node_pos} = add_node(nodes, node_pos)
-      {nodes, node_neg} = add_node(nodes, node_neg)
+      {variables, node_pos} = add_variable(variables, node_pos)
+      {variables, node_neg} = add_variable(variables, node_neg)
+      {variables, j} = add_variable(variables, "j#{id}")
 
-      c = %C.VoltageSource{name: name, node_pos: node_pos, node_neg: node_neg, value: value}
-      {:ok, c, nodes}
+      c = %C.VoltageSource{
+        name: name,
+        node_pos: node_pos,
+        node_neg: node_neg,
+        value: value,
+        current: j
+      }
+
+      {:ok, c, variables}
     end
   end
 
-  def parse([<<"I", _::bitstring>> = name, node_pos, node_neg, value_str], nodes) do
+  def parse([<<"I", _::bitstring>> = name, node_pos, node_neg, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
-      {nodes, node_pos} = add_node(nodes, node_pos)
-      {nodes, node_neg} = add_node(nodes, node_neg)
+      {variables, node_pos} = add_variable(variables, node_pos)
+      {variables, node_neg} = add_variable(variables, node_neg)
 
       c = %C.CurrentSource{name: name, node_pos: node_pos, node_neg: node_neg, value: value}
-      {:ok, c, nodes}
+      {:ok, c, variables}
     end
   end
 
-  def parse([<<"R", _::bitstring>> = name, node_1, node_2, value_str], nodes) do
+  def parse([<<"R", _::bitstring>> = name, node_1, node_2, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
-      {nodes, node_1} = add_node(nodes, node_1)
-      {nodes, node_2} = add_node(nodes, node_2)
+      {variables, node_1} = add_variable(variables, node_1)
+      {variables, node_2} = add_variable(variables, node_2)
 
       c = %C.Resistor{name: name, nodes: [node_1, node_2], value: value}
-      {:ok, c, nodes}
+      {:ok, c, variables}
     end
   end
 
-  def parse([<<"C", _::bitstring>> = name, node_1, node_2, value_str], nodes) do
+  def parse([<<"C", id::bitstring>> = name, node_1, node_2, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
-      {nodes, node_1} = add_node(nodes, node_1)
-      {nodes, node_2} = add_node(nodes, node_2)
+      {variables, node_1} = add_variable(variables, node_1)
+      {variables, node_2} = add_variable(variables, node_2)
+      {variables, j} = add_variable(variables, "j#{id}")
 
-      c = %C.Capacitor{name: name, nodes: [node_1, node_2], value: value}
-      {:ok, c, nodes}
+      c = %C.Capacitor{name: name, nodes: [node_1, node_2], value: value, current: j}
+      {:ok, c, variables}
     end
   end
 
-  def parse([<<"L", _::bitstring>> = name, node_1, node_2, value_str], nodes) do
+  def parse([<<"L", id::bitstring>> = name, node_1, node_2, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
-      {nodes, node_1} = add_node(nodes, node_1)
-      {nodes, node_2} = add_node(nodes, node_2)
+      {variables, node_1} = add_variable(variables, node_1)
+      {variables, node_2} = add_variable(variables, node_2)
+      {variables, j} = add_variable(variables, "j#{id}")
 
-      c = %C.Inductor{name: name, nodes: [node_1, node_2], value: value}
-      {:ok, c, nodes}
+      c = %C.Inductor{name: name, nodes: [node_1, node_2], value: value, current: j}
+      {:ok, c, variables}
     end
   end
 
   def parse(
         [
-          <<"K", _::bitstring>> = name,
+          <<"K", id::bitstring>> = name,
           node_1_pos,
           node_1_neg,
           node_2_pos,
           node_2_neg,
           value_str
         ],
-        nodes
+        variables
       ) do
     with {:ok, n} <- parse_value(value_str) do
-      {nodes, node_1_pos} = add_node(nodes, node_1_pos)
-      {nodes, node_1_neg} = add_node(nodes, node_1_neg)
-      {nodes, node_2_pos} = add_node(nodes, node_2_pos)
-      {nodes, node_2_neg} = add_node(nodes, node_2_neg)
+      {variables, node_1_pos} = add_variable(variables, node_1_pos)
+      {variables, node_1_neg} = add_variable(variables, node_1_neg)
+      {variables, node_2_pos} = add_variable(variables, node_2_pos)
+      {variables, node_2_neg} = add_variable(variables, node_2_neg)
+      {variables, j} = add_variable(variables, "j#{id}")
 
       c = %C.Transformer{
         name: name,
@@ -95,57 +106,63 @@ defmodule ExSpice.Netlist.StatementParser do
         node_1_neg: node_1_neg,
         node_2_pos: node_2_pos,
         node_2_neg: node_2_neg,
-        n: n
+        n: n,
+        current: j
       }
 
-      {:ok, c, nodes}
+      {:ok, c, variables}
     end
   end
 
   def parse(
         [
-          <<"O", _::bitstring>> = name,
+          <<"O", id::bitstring>> = name,
           node_out_pos,
           node_out_neg,
           node_in_pos,
           node_in_neg
         ],
-        nodes
+        variables
       ) do
-    {nodes, node_out_pos} = add_node(nodes, node_out_pos)
-    {nodes, node_out_neg} = add_node(nodes, node_out_neg)
-    {nodes, node_in_pos} = add_node(nodes, node_in_pos)
-    {nodes, node_in_neg} = add_node(nodes, node_in_neg)
+    {variables, node_out_pos} = add_variable(variables, node_out_pos)
+    {variables, node_out_neg} = add_variable(variables, node_out_neg)
+    {variables, node_in_pos} = add_variable(variables, node_in_pos)
+    {variables, node_in_neg} = add_variable(variables, node_in_neg)
+    {variables, j} = add_variable(variables, "j#{id}")
 
     c = %C.OpAmp{
       name: name,
       node_out_pos: node_out_pos,
       node_out_neg: node_out_neg,
       node_in_pos: node_in_pos,
-      node_in_neg: node_in_neg
+      node_in_neg: node_in_neg,
+      current: j
     }
 
-    {:ok, c, nodes}
+    {:ok, c, variables}
   end
 
   def parse(
         [
-          <<"D", _::bitstring>> = name,
+          <<"D", id::bitstring>> = name,
           node_pos,
           node_neg
         ],
-        nodes
+        variables
       ) do
-    {nodes, node_pos} = add_node(nodes, node_pos)
-    {nodes, node_neg} = add_node(nodes, node_neg)
+    {variables, node_pos} = add_variable(variables, node_pos)
+    {variables, node_neg} = add_variable(variables, node_neg)
+
+    {variables, j} = add_variable(variables, "j#{id}")
 
     c = %C.Diode{
       name: name,
       node_pos: node_pos,
-      node_neg: node_neg
+      node_neg: node_neg,
+      current: j
     }
 
-    {:ok, c, nodes}
+    {:ok, c, variables}
   end
 
   def parse(
@@ -157,13 +174,13 @@ defmodule ExSpice.Netlist.StatementParser do
           control_neg,
           limit_voltage_str
         ],
-        nodes
+        variables
       ) do
     with {:ok, limit_voltage} <- parse_value(limit_voltage_str) do
-      {nodes, node_pos} = add_node(nodes, node_pos)
-      {nodes, node_neg} = add_node(nodes, node_neg)
-      {nodes, control_pos} = add_node(nodes, control_pos)
-      {nodes, control_neg} = add_node(nodes, control_neg)
+      {variables, node_pos} = add_variable(variables, node_pos)
+      {variables, node_neg} = add_variable(variables, node_neg)
+      {variables, control_pos} = add_variable(variables, control_pos)
+      {variables, control_neg} = add_variable(variables, control_neg)
 
       c = %C.Switch{
         name: name,
@@ -174,32 +191,66 @@ defmodule ExSpice.Netlist.StatementParser do
         limit_voltage: limit_voltage
       }
 
-      {:ok, c, nodes}
+      {:ok, c, variables}
+    end
+  end
+
+  def parse(
+        [
+          <<"H", id::bitstring>> = name,
+          node_out_pos,
+          node_out_neg,
+          node_in_pos,
+          node_in_neg,
+          value_str
+        ],
+        variables
+      ) do
+    with {:ok, gain} <- parse_value(value_str) do
+      {variables, node_out_pos} = add_variable(variables, node_out_pos)
+      {variables, node_out_neg} = add_variable(variables, node_out_neg)
+      {variables, node_in_pos} = add_variable(variables, node_in_pos)
+      {variables, node_in_neg} = add_variable(variables, node_in_neg)
+      {variables, jx} = add_variable(variables, "jx#{id}")
+      {variables, jy} = add_variable(variables, "jy#{id}")
+
+      c = %C.CurrentControlledCurrentSource{
+        name: name,
+        node_out_pos: node_out_pos,
+        node_out_neg: node_out_neg,
+        node_in_pos: node_in_pos,
+        node_in_neg: node_in_neg,
+        gain: gain,
+        current_out: jy,
+        current_in: jx
+      }
+
+      {:ok, c, variables}
     end
   end
 
   for {prefix, model} <- [
         {"E", C.VoltageControlledVoltageSource},
         {"F", C.CurrentControlledVoltageSource},
-        {"G", C.VoltageControlledCurrentSource},
-        {"C", C.CurrentControlledCurrentSource}
+        {"G", C.VoltageControlledCurrentSource}
       ] do
     def parse(
           [
-            <<unquote(prefix), _::bitstring>> = name,
+            <<unquote(prefix), id::bitstring>> = name,
             node_out_pos,
             node_out_neg,
             node_in_pos,
             node_in_neg,
             value_str
           ],
-          nodes
+          variables
         ) do
       with {:ok, gain} <- parse_value(value_str) do
-        {nodes, node_out_pos} = add_node(nodes, node_out_pos)
-        {nodes, node_out_neg} = add_node(nodes, node_out_neg)
-        {nodes, node_in_pos} = add_node(nodes, node_in_pos)
-        {nodes, node_in_neg} = add_node(nodes, node_in_neg)
+        {variables, node_out_pos} = add_variable(variables, node_out_pos)
+        {variables, node_out_neg} = add_variable(variables, node_out_neg)
+        {variables, node_in_pos} = add_variable(variables, node_in_pos)
+        {variables, node_in_neg} = add_variable(variables, node_in_neg)
+        {variables, j} = add_variable(variables, "j#{id}")
 
         c = %unquote(model){
           name: name,
@@ -207,10 +258,11 @@ defmodule ExSpice.Netlist.StatementParser do
           node_out_neg: node_out_neg,
           node_in_pos: node_in_pos,
           node_in_neg: node_in_neg,
-          gain: gain
+          gain: gain,
+          current: j
         }
 
-        {:ok, c, nodes}
+        {:ok, c, variables}
       end
     end
   end
@@ -234,14 +286,14 @@ defmodule ExSpice.Netlist.StatementParser do
 
   defp convert_unit(unit), do: {:error, {:invalid_unit, unit}}
 
-  defp add_node(nodes, node_name) do
-    case Map.get(nodes, node_name) do
+  defp add_variable(vars, var_name) do
+    case Map.get(vars, var_name) do
       nil ->
-        node_number = Enum.count(nodes)
-        {Map.put(nodes, node_name, node_number), node_number}
+        var_number = Enum.count(vars)
+        {Map.put(vars, var_name, var_number), var_number}
 
       number ->
-        {nodes, number}
+        {vars, number}
     end
   end
 end

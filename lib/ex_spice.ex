@@ -58,19 +58,27 @@ defmodule ExSpice do
   end
 
   def dc_simulation(netlist) do
-    num_vars = Enum.count(netlist.nodes)
+    num_vars = Enum.count(netlist.variables)
     shape = {num_vars + 1, num_vars + 2}
 
     yn =
       Enum.reduce(netlist.components, Nx.broadcast(0, shape), fn component, yn ->
+        IO.inspect(component)
+
         ExSpice.Component.DC.as_tensor(component, shape)
         |> Nx.add(yn)
+        |> IO.inspect(label: "yn after #{component.name}")
       end)
 
-    solve(
-      Nx.slice(yn, [1, 1], [num_vars - 1, num_vars - 1]),
-      Nx.slice(yn, [1, num_vars + 1], [num_vars - 1, 1])
-    )
+    IO.inspect(yn, label: "yn")
+
+    solution =
+      solve(
+        Nx.slice(yn, [1, 1], [num_vars - 1, num_vars - 1]),
+        Nx.slice(yn, [1, num_vars + 1], [num_vars - 1, 1])
+      )
+
+    %{netlist | solution: Nx.concatenate([Nx.tensor([0], type: solution.type), solution])}
   end
 
   @doc """
@@ -84,6 +92,8 @@ defmodule ExSpice do
       >
   """
   def solve(a, b) do
+    IO.inspect(a, label: "a")
+    IO.inspect(b, label: "b")
     {q, r} = Nx.qr(a)
 
     # triangularize the system

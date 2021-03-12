@@ -1,5 +1,5 @@
 defmodule ExSpice.Components.VoltageControlledCurrentSource do
-  defstruct [:name, :node_out_pos, :node_out_neg, :node_in_pos, :node_in_neg, :gain]
+  defstruct [:name, :node_out_pos, :node_out_neg, :node_in_pos, :node_in_neg, :gain, :current]
 
   defimpl ExSpice.Component.DC, for: __MODULE__ do
     def as_tensor(
