@@ -8,7 +8,7 @@ defmodule ExSpice.Application do
   def start(_type, _args) do
     children = [
       # Start the Ecto repository
-      ExSpice.Repo,
+      # ExSpice.Repo,
       # Start the Telemetry supervisor
       ExSpiceWeb.Telemetry,
       # Start the PubSub system

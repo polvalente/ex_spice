@@ -18,7 +18,7 @@ defmodule ExSpice.Netlist.StatementParser do
 
   def parse(["*" | _], _nodes), do: {:ok, nil}
 
-  def parse([<<prefix::utf8, _::bitstring>> | _], _nodes)
+  def parse([<<prefix::binary-size(1), _::bitstring>> | _], _nodes)
       when prefix not in @valid_line_prefixes,
       do: {:error, {:invalid_component, prefix}}
 
@@ -236,11 +236,12 @@ defmodule ExSpice.Netlist.StatementParser do
 
   defp add_node(nodes, node_name) do
     case Map.get(nodes, node_name) do
+      nil ->
+        node_number = Enum.count(nodes)
+        {Map.put(nodes, node_name, node_number), node_number}
+
       number ->
         {nodes, number}
-
-      nil ->
-        {Map.put(nodes, node_name, Enum.count(nodes) + 1)}
     end
   end
 end

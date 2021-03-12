@@ -51,10 +51,63 @@ defmodule ExSpice do
   def dc_simulation(netlist) do
     num_vars = Enum.count(netlist.nodes)
     shape = {num_vars + 1, num_vars + 2}
-    yn = Nx.broadcast(0, shape)
 
-    Enum.reduce(netlist.components, yn, fn {component, yn} ->
-      Component.as_tensor(component, shape)
-    end)
+    yn =
+      Enum.reduce(netlist.components, Nx.broadcast(0, shape), fn component, yn ->
+        ExSpice.Component.DC.as_tensor(component, shape)
+        |> Nx.add(yn)
+      end)
+
+    solve(
+      Nx.slice(yn, [1, 1], [num_vars - 1, num_vars - 1]),
+      Nx.slice(yn, [1, num_vars + 1], [num_vars - 1, 1])
+    )
+  end
+
+  @doc """
+  Solves a system Ax = b for x, where A is a square matrix
+
+  ## Examples
+      iex> ExSpice.solve(Nx.tensor([[1, 0, 1], [1, 0, -1], [0, 1, 0]]), Nx.tensor([4, -2, 2]))
+      #Nx.Tensor<
+        f32[3]
+        [1.0, 2.0, 3.0]
+      >
+  """
+  def solve(a, b) do
+    {q, r} = Nx.qr(a)
+
+    # triangularize the system
+    b_prime = q |> Nx.transpose() |> Nx.dot(b)
+
+    IO.inspect(a, label: "a")
+    IO.inspect(b, label: "b")
+    IO.inspect(q, label: "q")
+    IO.inspect(r, label: "r")
+
+    triangular_solve(r, b_prime)
+  end
+
+  @doc false
+  def triangular_solve(%{shape: {rows, rows}} = a, b) do
+    zeros = List.duplicate(0, rows)
+
+    row_range = Enum.uniq((rows - 1)..0)
+
+    for row <- row_range, reduce: Nx.broadcast(0, {rows}) do
+      solution ->
+        i_range = Enum.filter(row_range, &(&1 >= row + 1))
+
+        x =
+          for i <- i_range, reduce: Nx.to_scalar(Nx.reshape(b[[row]], {})) do
+            x ->
+              res = x - Nx.to_scalar(a[[row, i]]) * Nx.to_scalar(solution[[i]])
+              res
+          end
+
+        x = x / Nx.to_scalar(a[[row, row]])
+
+        Nx.add(solution, Nx.tensor(List.replace_at(zeros, row, x)))
+    end
   end
 end

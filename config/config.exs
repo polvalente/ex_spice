@@ -7,8 +7,8 @@
 # General application configuration
 use Mix.Config
 
-config :ex_spice,
-  ecto_repos: [ExSpice.Repo]
+# config :ex_spice,
+#   ecto_repos: [ExSpice.Repo]
 
 # Configures the endpoint
 config :ex_spice, ExSpiceWeb.Endpoint,

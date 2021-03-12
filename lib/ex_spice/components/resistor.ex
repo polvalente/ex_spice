@@ -1,7 +1,7 @@
 defmodule ExSpice.Components.Resistor do
   defstruct [:name, :nodes, :value]
 
-  defimpl Component.DC, for: __MODULE__ do
+  defimpl ExSpice.Component.DC, for: __MODULE__ do
     def as_tensor(%{value: value, nodes: [node_1, node_2]}, {rows, cols}) do
       g = 1 / value
 
