@@ -22,11 +22,11 @@ defmodule ExSpice.Netlist.StatementParser do
       when prefix not in @valid_line_prefixes,
       do: {:error, {:invalid_component, prefix}}
 
-  def parse([<<"V", id::bitstring>> = name, node_pos, node_neg, value_str], variables) do
+  def parse([<<"V", _::bitstring>> = name, node_pos, node_neg, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
       {variables, node_pos} = add_variable(variables, node_pos)
       {variables, node_neg} = add_variable(variables, node_neg)
-      {variables, j} = add_variable(variables, "j#{id}")
+      {variables, j} = add_variable(variables, "j#{name}")
 
       c = %C.VoltageSource{
         name: name,
@@ -60,22 +60,22 @@ defmodule ExSpice.Netlist.StatementParser do
     end
   end
 
-  def parse([<<"C", id::bitstring>> = name, node_1, node_2, value_str], variables) do
+  def parse([<<"C", _::bitstring>> = name, node_1, node_2, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
       {variables, node_1} = add_variable(variables, node_1)
       {variables, node_2} = add_variable(variables, node_2)
-      {variables, j} = add_variable(variables, "j#{id}")
+      {variables, j} = add_variable(variables, "j#{name}")
 
       c = %C.Capacitor{name: name, nodes: [node_1, node_2], value: value, current: j}
       {:ok, c, variables}
     end
   end
 
-  def parse([<<"L", id::bitstring>> = name, node_1, node_2, value_str], variables) do
+  def parse([<<"L", _::bitstring>> = name, node_1, node_2, value_str], variables) do
     with {:ok, value} <- parse_value(value_str) do
       {variables, node_1} = add_variable(variables, node_1)
       {variables, node_2} = add_variable(variables, node_2)
-      {variables, j} = add_variable(variables, "j#{id}")
+      {variables, j} = add_variable(variables, "j#{name}")
 
       c = %C.Inductor{name: name, nodes: [node_1, node_2], value: value, current: j}
       {:ok, c, variables}
@@ -84,7 +84,7 @@ defmodule ExSpice.Netlist.StatementParser do
 
   def parse(
         [
-          <<"K", id::bitstring>> = name,
+          <<"K", _::bitstring>> = name,
           node_1_pos,
           node_1_neg,
           node_2_pos,
@@ -98,7 +98,7 @@ defmodule ExSpice.Netlist.StatementParser do
       {variables, node_1_neg} = add_variable(variables, node_1_neg)
       {variables, node_2_pos} = add_variable(variables, node_2_pos)
       {variables, node_2_neg} = add_variable(variables, node_2_neg)
-      {variables, j} = add_variable(variables, "j#{id}")
+      {variables, j} = add_variable(variables, "j#{name}")
 
       c = %C.Transformer{
         name: name,
@@ -116,7 +116,7 @@ defmodule ExSpice.Netlist.StatementParser do
 
   def parse(
         [
-          <<"O", id::bitstring>> = name,
+          <<"O", _::bitstring>> = name,
           node_out_pos,
           node_out_neg,
           node_in_pos,
@@ -128,7 +128,7 @@ defmodule ExSpice.Netlist.StatementParser do
     {variables, node_out_neg} = add_variable(variables, node_out_neg)
     {variables, node_in_pos} = add_variable(variables, node_in_pos)
     {variables, node_in_neg} = add_variable(variables, node_in_neg)
-    {variables, j} = add_variable(variables, "j#{id}")
+    {variables, j} = add_variable(variables, "j#{name}")
 
     c = %C.OpAmp{
       name: name,
@@ -144,7 +144,7 @@ defmodule ExSpice.Netlist.StatementParser do
 
   def parse(
         [
-          <<"D", id::bitstring>> = name,
+          <<"D", _::bitstring>> = name,
           node_pos,
           node_neg
         ],
@@ -153,7 +153,7 @@ defmodule ExSpice.Netlist.StatementParser do
     {variables, node_pos} = add_variable(variables, node_pos)
     {variables, node_neg} = add_variable(variables, node_neg)
 
-    {variables, j} = add_variable(variables, "j#{id}")
+    {variables, j} = add_variable(variables, "j#{name}")
 
     c = %C.Diode{
       name: name,
@@ -197,7 +197,7 @@ defmodule ExSpice.Netlist.StatementParser do
 
   def parse(
         [
-          <<"H", id::bitstring>> = name,
+          <<"H", _::bitstring>> = name,
           node_out_pos,
           node_out_neg,
           node_in_pos,
@@ -211,8 +211,8 @@ defmodule ExSpice.Netlist.StatementParser do
       {variables, node_out_neg} = add_variable(variables, node_out_neg)
       {variables, node_in_pos} = add_variable(variables, node_in_pos)
       {variables, node_in_neg} = add_variable(variables, node_in_neg)
-      {variables, jx} = add_variable(variables, "jx#{id}")
-      {variables, jy} = add_variable(variables, "jy#{id}")
+      {variables, jx} = add_variable(variables, "jx#{name}")
+      {variables, jy} = add_variable(variables, "jy#{name}")
 
       c = %C.CurrentControlledCurrentSource{
         name: name,
@@ -236,7 +236,7 @@ defmodule ExSpice.Netlist.StatementParser do
       ] do
     def parse(
           [
-            <<unquote(prefix), id::bitstring>> = name,
+            <<unquote(prefix), _::bitstring>> = name,
             node_out_pos,
             node_out_neg,
             node_in_pos,
@@ -250,7 +250,7 @@ defmodule ExSpice.Netlist.StatementParser do
         {variables, node_out_neg} = add_variable(variables, node_out_neg)
         {variables, node_in_pos} = add_variable(variables, node_in_pos)
         {variables, node_in_neg} = add_variable(variables, node_in_neg)
-        {variables, j} = add_variable(variables, "j#{id}")
+        {variables, j} = add_variable(variables, "j#{name}")
 
         c = %unquote(model){
           name: name,

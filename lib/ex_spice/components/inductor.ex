@@ -18,7 +18,6 @@ defmodule ExSpice.Components.Inductor do
         end)
       end)
       |> Nx.tensor()
-      |> IO.inspect(label: "L stamp")
     end
   end
 end

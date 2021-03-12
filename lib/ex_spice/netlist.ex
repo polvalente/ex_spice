@@ -9,7 +9,7 @@ defmodule ExSpice.Netlist do
 
   def parse(contents) when is_binary(contents) do
     contents
-    |> String.split(~r/[\r\n]/)
+    |> String.split(~r/[\r\n]/, trim: true)
     |> Enum.with_index(1)
     |> Enum.reduce_while(%__MODULE__{}, fn {line, line_number}, netlist ->
       line

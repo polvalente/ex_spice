@@ -10,10 +10,25 @@ defmodule ExSpice do
   ## Examples
 
       iex> netlist = ExSpice.parse_file(Path.join(:code.priv_dir(:ex_spice), "netlist_rr.txt"))
-      iex> ExSpice.simulate(netlist, mode: :dc)
+      iex> %ExSpice.Netlist{solution: solution, components: components, variables: variables} = ExSpice.simulate(netlist, mode: :dc)
+      iex> components
+      [
+        %ExSpice.Components.CurrentSource{
+          name: "I1", node_neg: 1, node_pos: 0, value: 1.0
+        },
+        %ExSpice.Components.Resistor{
+          name: "R2", nodes: [2, 0], value: 2.0
+        },
+        %ExSpice.Components.Resistor{
+          name: "R1", nodes: [1, 2], value: 1.0
+        }
+      ]
+      iex> variables
+      %{"0" => 0, "A" => 1, "B" => 2}
+      iex> solution
       #Nx.Tensor<
-        f32[2]
-        [3.0, 2.0]
+        f32[3]
+        [0.0, 3.0, 2.0]
       >
   """
 
@@ -63,14 +78,9 @@ defmodule ExSpice do
 
     yn =
       Enum.reduce(netlist.components, Nx.broadcast(0, shape), fn component, yn ->
-        IO.inspect(component)
-
         ExSpice.Component.DC.as_tensor(component, shape)
         |> Nx.add(yn)
-        |> IO.inspect(label: "yn after #{component.name}")
       end)
-
-    IO.inspect(yn, label: "yn")
 
     solution =
       solve(
@@ -92,8 +102,6 @@ defmodule ExSpice do
       >
   """
   def solve(a, b) do
-    IO.inspect(a, label: "a")
-    IO.inspect(b, label: "b")
     {q, r} = Nx.qr(a)
 
     # triangularize the system
