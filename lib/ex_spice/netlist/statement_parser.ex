@@ -14,13 +14,33 @@ defmodule ExSpice.Netlist.StatementParser do
     "f" => 1.0e-15
   }
 
-  @valid_line_prefixes ~w(R C L K O E F G H D $)
+  @valid_line_prefixes ~w(R C L K O E F G H D I V$)
 
   def parse(["*" | _], _nodes), do: {:ok, nil}
 
   def parse([<<prefix::utf8, _::bitstring>> | _], _nodes)
       when prefix not in @valid_line_prefixes,
       do: {:error, {:invalid_component, prefix}}
+
+  def parse([<<"V", _::bitstring>> = name, node_pos, node_neg, value_str], nodes) do
+    with {:ok, value} <- parse_value(value_str) do
+      {nodes, node_pos} = add_node(nodes, node_pos)
+      {nodes, node_neg} = add_node(nodes, node_neg)
+
+      c = %C.VoltageSource{name: name, node_pos: node_pos, node_neg: node_neg, value: value}
+      {:ok, c, nodes}
+    end
+  end
+
+  def parse([<<"I", _::bitstring>> = name, node_pos, node_neg, value_str], nodes) do
+    with {:ok, value} <- parse_value(value_str) do
+      {nodes, node_pos} = add_node(nodes, node_pos)
+      {nodes, node_neg} = add_node(nodes, node_neg)
+
+      c = %C.CurrentSource{name: name, node_pos: node_pos, node_neg: node_neg, value: value}
+      {:ok, c, nodes}
+    end
+  end
 
   def parse([<<"R", _::bitstring>> = name, node_1, node_2, value_str], nodes) do
     with {:ok, value} <- parse_value(value_str) do

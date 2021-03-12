@@ -31,4 +31,30 @@ defmodule ExSpice do
   def parse(contents) do
     Netlist.parse(contents)
   end
+
+  def parse_file(filename) do
+    case File.read(filename) do
+      {:ok, contents} -> parse(contents)
+      err -> err
+    end
+  end
+
+  def simulate(%Netlist{} = netlist, opts \\ []) do
+    mode = opts[:mode] || :dc
+
+    case mode do
+      :dc -> dc_simulation(netlist)
+      _ -> raise ArgumentError, "invalid mode. Got #{mode}, expected one of: [:dc]"
+    end
+  end
+
+  def dc_simulation(netlist) do
+    num_vars = Enum.count(netlist.nodes)
+    shape = {num_vars + 1, num_vars + 2}
+    yn = Nx.broadcast(0, shape)
+
+    Enum.reduce(netlist.components, yn, fn {component, yn} ->
+      Component.as_tensor(component, shape)
+    end)
+  end
 end
