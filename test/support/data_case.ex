@@ -28,11 +28,11 @@ defmodule ExSpice.DataCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ExSpice.Repo)
+    # :ok = Ecto.Adapters.SQL.Sandbox.checkout(ExSpice.Repo)
 
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(ExSpice.Repo, {:shared, self()})
-    end
+    # unless tags[:async] do
+    #   Ecto.Adapters.SQL.Sandbox.mode(ExSpice.Repo, {:shared, self()})
+    # end
 
     :ok
   end

@@ -15,7 +15,6 @@ defmodule ExSpice.Netlist do
       line
       |> String.split(~r/\s/, trim: true)
       |> StatementParser.parse(netlist.nodes)
-      |> IO.inspect()
       |> case do
         {:ok, component, nodes} -> {:cont, update_netlist(netlist, component, nodes)}
         {:error, error} -> {:halt, {:error, {:invalid_line, error, line_number}}}

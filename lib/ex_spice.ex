@@ -6,6 +6,15 @@ defmodule ExSpice do
   netlists and for simulating parsed structures.
 
   Based on MNA1 by Antonio Carlos M. de Queiroz
+
+  ## Examples
+
+      iex> netlist = ExSpice.parse_file(Path.join(:code.priv_dir(:ex_spice), "netlist_rr.txt"))
+      iex> ExSpice.simulate(netlist, mode: :dc)
+      #Nx.Tensor<
+        f32[2]
+        [3.0, 2.0]
+      >
   """
 
   alias ExSpice.Netlist
@@ -80,16 +89,12 @@ defmodule ExSpice do
     # triangularize the system
     b_prime = q |> Nx.transpose() |> Nx.dot(b)
 
-    IO.inspect(a, label: "a")
-    IO.inspect(b, label: "b")
-    IO.inspect(q, label: "q")
-    IO.inspect(r, label: "r")
-
     triangular_solve(r, b_prime)
   end
 
   @doc false
   def triangular_solve(%{shape: {rows, rows}} = a, b) do
+    # placeholder upper triangular solve
     zeros = List.duplicate(0, rows)
 
     row_range = Enum.uniq((rows - 1)..0)
