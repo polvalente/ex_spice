@@ -1,4 +1,13 @@
 defmodule ExSpice.Components.CurrentControlledCurrentSource do
+  @moduledoc """
+  Current flows from `node_out_neg` to `node_out_pos`,
+  with value `gain * current`, where `current` is the current
+  that flows from `node_in_neg` to `node_in_pos`.
+
+  Note that the connection `node_in_neg` -> `node_in_pos` is a
+  short-circuit.
+  """
+
   defstruct [
     :name,
     :node_out_pos,
