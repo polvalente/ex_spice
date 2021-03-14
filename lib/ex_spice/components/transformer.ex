@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.Transformer do
+  @format "K<name> <node 1+> <node 1-> <node 2+> <node 2-> <n>"
+  @moduledoc """
+  Transformer
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [:name, :node_1_pos, :node_1_neg, :node_2_pos, :node_2_neg, :n, :current]
 
   defimpl ExSpice.Component, for: __MODULE__ do

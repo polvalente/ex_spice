@@ -33,6 +33,11 @@ defmodule ExSpice do
   """
 
   alias ExSpice.Netlist
+  alias ExSpice.Components, as: C
+  alias C.CurrentControlledCurrentSource, as: CCCS
+  alias C.CurrentControlledVoltageSource, as: CCVS
+  alias C.VoltageControlledCurrentSource, as: VCCS
+  alias C.VoltageControlledVoltageSource, as: VCVS
 
   @doc """
   Parse the contents of a SPICE netlist
@@ -40,22 +45,23 @@ defmodule ExSpice do
 
   Accepted components:
 
-  * Resistor    -  R<name> <node 1> <node 2> <value>
-  * Capacitor   -  C<name> <node 1> <node 2> <value>
-  * Inductor    -  L<name> <node 1> <node 2> <value>
-  * Transformer -  K<name> <node 1+> <node 1-> <node 2+> <node 2-> <n>
-  * Op.Amp.     -  O<name> <node out+> <node out-> <node in+> <node in->
-  * V.C.V.S.    -  E<name> <node out+> <node out-> <node in+> <node in-> <Gain>
-  * C.C.C.S.    -  F<name> <node out+> <node out-> <node in+> <node in-> <Gain>
-  * V.C.C.S.    -  G<name> <node out+> <node out-> <node in+> <node in-> <Gain>
-  * C.C.V.S.    -  H<name> <node out+> <node out-> <node in+> <node in-> <Gain>
-  * Diode       -  D<name> <node +> <node ->
-  * Switch      -  $<name> <node +> <node -> <control node +> <control node -> <limit voltage>
+  * [Resistor](`#{C.Resistor}`)   -  `#{C.Resistor.format()}`
+  * [Capacitor](`#{C.Capacitor}`)   -  `#{C.Capacitor.format()}`
+  * [Inductor](`#{C.Inductor}`)   -  `#{C.Inductor.format()}`
+  * [Transformer](`#{C.Transformer}`)   -  `#{C.Transformer.format()}`
+  * [OpAmp](`#{C.OpAmp}`)   -  `#{C.OpAmp.format()}`
+  * [C.C.C.S.](`#{CCCS}`) - `#{CCCS.format()}`
+  * [C.C.V.S.](`#{CCVS}`)   -  `#{CCVS.format()}`
+  * [V.C.C.S.](`#{VCCS}`)   -  `#{VCCS.format()}`
+  * [V.C.V.S.](`#{VCVS}`)   -  `#{VCVS.format()}`
+  * [Diode](`#{C.Diode}`)   -  `#{C.Diode.format()}`
+  * [Switch](`#{C.Switch}`)   -  `#{C.Switch.format()}`
   """
   def parse(contents) do
     Netlist.parse(contents)
   end
 
+  @doc "Parse file at `filename` with `parse/1` function"
   def parse_file(filename) do
     case File.read(filename) do
       {:ok, contents} -> parse(contents)
@@ -63,6 +69,15 @@ defmodule ExSpice do
     end
   end
 
+  @doc """
+  Execute the simulation for the circuit represented by `netlist`
+
+  ## Options
+
+  * `:mode` - currently only `:dc` is available. Defaults to `:dc`
+    * `:dc` executes the operating/bias point DC simulation,
+    where capacitors as "infinite" resistances and inductors are almost short-circuits
+  """
   def simulate(%Netlist{} = netlist, opts \\ []) do
     mode = opts[:mode] || :dc
 
@@ -72,7 +87,7 @@ defmodule ExSpice do
     end
   end
 
-  def dc_simulation(netlist) do
+  defp dc_simulation(netlist) do
     num_vars = Enum.count(netlist.variables)
     shape = {num_vars + 1, num_vars + 2}
 
@@ -92,7 +107,7 @@ defmodule ExSpice do
   end
 
   @doc """
-  Solves a system Ax = b for x, where A is a square matrix
+  Utility function for `simulate/2`. Solves a system Ax = b for x, where A is a square matrix.
 
   ## Examples
       iex> ExSpice.solve(Nx.tensor([[1, 0, 1], [1, 0, -1], [0, 1, 0]]), Nx.tensor([4, -2, 2]))
@@ -110,8 +125,7 @@ defmodule ExSpice do
     triangular_solve(r, b_prime)
   end
 
-  @doc false
-  def triangular_solve(%{shape: {rows, rows}} = a, b) do
+  defp triangular_solve(%{shape: {rows, rows}} = a, b) do
     # placeholder upper triangular solve
     zeros = List.duplicate(0, rows)
 

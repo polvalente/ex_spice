@@ -1,4 +1,5 @@
 defmodule ExSpice.Components.CurrentControlledCurrentSource do
+  @format "F<name> <node out+> <node out-> <node in+> <node in-> <Gain>"
   @moduledoc """
   Current flows from `node_out_neg` to `node_out_pos`,
   with value `gain * current`, where `current` is the current
@@ -6,6 +7,8 @@ defmodule ExSpice.Components.CurrentControlledCurrentSource do
 
   Note that the connection `node_in_neg` -> `node_in_pos` is a
   short-circuit.
+
+  Netlist format: `#{@format}`
   """
 
   defstruct [
@@ -17,6 +20,9 @@ defmodule ExSpice.Components.CurrentControlledCurrentSource do
     :gain,
     :current
   ]
+
+  @doc false
+  def format, do: @format
 
   defimpl ExSpice.Component, for: __MODULE__ do
     def dc_stamp(

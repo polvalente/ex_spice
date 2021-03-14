@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.OpAmp do
+  @format "O<name> <node out+> <node out-> <node in+> <node in->"
+  @moduledoc """
+  Operational Amplifier
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [:name, :node_out_pos, :node_out_neg, :node_in_pos, :node_in_neg, :current]
 
   defimpl ExSpice.Component, for: __MODULE__ do

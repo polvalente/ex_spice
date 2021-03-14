@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.Resistor do
+  @format "R<name> <node +> <node -> <value>"
+  @moduledoc """
+  Resistor
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [:name, :nodes, :value]
 
   defimpl ExSpice.Component, for: __MODULE__ do

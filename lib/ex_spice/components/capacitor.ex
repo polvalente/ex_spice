@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.Capacitor do
+  @format "C<name> <node +> <node -> <value>"
+  @moduledoc """
+  Capacitor
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [:name, :nodes, :value, :current]
 
   defimpl ExSpice.Component, for: __MODULE__ do

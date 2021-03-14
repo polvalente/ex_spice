@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.Inductor do
+  @format "L<name> <node +> <node -> <value>"
+  @moduledoc """
+  Inductor
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [:name, :nodes, :value, :current]
 
   defimpl ExSpice.Component, for: __MODULE__ do

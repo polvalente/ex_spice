@@ -235,7 +235,7 @@ defmodule ExSpiceTest do
                ],
                solution: solution,
                variables: variables
-             } = output = netlist |> ExSpice.parse() |> ExSpice.simulate(mode: :dc)
+             } = netlist |> ExSpice.parse() |> ExSpice.simulate(mode: :dc)
 
       assert %{"0" => 0, "1" => 1, "2" => 2, "3" => 3, "jF1" => 4} == variables
 
@@ -243,7 +243,52 @@ defmodule ExSpiceTest do
                Nx.round(solution)
     end
 
-    test "VCVS"
+    test "VCVS" do
+      netlist = """
+      I1 1 0 1
+      F1 2 0 3 1 2
+      R1 2 0 1
+      R2 3 0 1
+      """
+
+      assert %ExSpice.Netlist{
+               components: [
+                 %ExSpice.Components.Resistor{
+                   name: "R2",
+                   nodes: [3, 0],
+                   value: 1.0
+                 },
+                 %ExSpice.Components.Resistor{
+                   name: "R1",
+                   nodes: [2, 0],
+                   value: 1.0
+                 },
+                 %ExSpice.Components.CurrentControlledCurrentSource{
+                   current: 4,
+                   gain: 2.0,
+                   name: "F1",
+                   node_in_neg: 1,
+                   node_in_pos: 3,
+                   node_out_neg: 0,
+                   node_out_pos: 2
+                 },
+                 %ExSpice.Components.CurrentSource{
+                   name: "I1",
+                   node_neg: 0,
+                   node_pos: 1,
+                   value: 1.0
+                 }
+               ],
+               solution: solution,
+               variables: variables
+             } = netlist |> ExSpice.parse() |> ExSpice.simulate(mode: :dc)
+
+      assert %{"0" => 0, "1" => 1, "2" => 2, "3" => 3, "jF1" => 4} == variables
+
+      assert Nx.round(Nx.tensor([0.0, -1.0, 2.0, -1, 1])) ==
+               Nx.round(solution)
+    end
+
     test "CCVS"
     test "VCCS"
     test "Diode"

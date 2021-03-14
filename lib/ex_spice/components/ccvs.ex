@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.CurrentControlledVoltageSource do
+  @format "H<name> <node out+> <node out-> <node in+> <node in-> <Gain>"
+  @moduledoc """
+  Current Controlled Voltage Source
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [
     :name,
     :node_out_pos,
