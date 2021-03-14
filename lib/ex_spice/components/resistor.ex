@@ -1,8 +1,8 @@
 defmodule ExSpice.Components.Resistor do
   defstruct [:name, :nodes, :value]
 
-  defimpl ExSpice.Component.DC, for: __MODULE__ do
-    def as_tensor(%{value: value, nodes: [node_1, node_2]}, {rows, cols}) do
+  defimpl ExSpice.Component, for: __MODULE__ do
+    def dc_stamp(%{value: value, nodes: [node_1, node_2]}, {rows, cols}) do
       g = 1 / value
 
       Enum.map(0..(rows - 1), fn row ->
@@ -17,6 +17,26 @@ defmodule ExSpice.Components.Resistor do
         end)
       end)
       |> Nx.tensor()
+    end
+
+    def to_string(
+          %{
+            name: name,
+            nodes: [node_1, node_2],
+            value: value
+          },
+          netlist
+        ) do
+      [
+        name,
+        " ",
+        ExSpice.Netlist.translate_node(netlist, node_1),
+        " ",
+        ExSpice.Netlist.translate_node(netlist, node_2),
+        " ",
+        ExSpice.PrettyPrint.to_string(value),
+        "Ohm"
+      ]
     end
   end
 end

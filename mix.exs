@@ -9,6 +9,7 @@ defmodule ExSpice.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
+      consolidate_protocols: true,
       aliases: aliases(),
       deps: deps()
     ]

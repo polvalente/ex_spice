@@ -14,7 +14,7 @@ defmodule ExSpice.Netlist.StatementParser do
     "f" => 1.0e-15
   }
 
-  @valid_line_prefixes ~w(R C L K O E F G H D I V$)
+  @valid_line_prefixes ~w(R C L K O E F G H D I V $)
 
   def parse(["*" | _], _nodes), do: {:ok, nil}
 
@@ -214,7 +214,7 @@ defmodule ExSpice.Netlist.StatementParser do
       {variables, jx} = add_variable(variables, "jx#{name}")
       {variables, jy} = add_variable(variables, "jy#{name}")
 
-      c = %C.CurrentControlledCurrentSource{
+      c = %C.CurrentControlledVoltageSource{
         name: name,
         node_out_pos: node_out_pos,
         node_out_neg: node_out_neg,
@@ -229,10 +229,39 @@ defmodule ExSpice.Netlist.StatementParser do
     end
   end
 
+  def parse(
+        [
+          <<"G", _::bitstring>> = name,
+          node_out_pos,
+          node_out_neg,
+          node_in_pos,
+          node_in_neg,
+          value_str
+        ],
+        variables
+      ) do
+    with {:ok, gain} <- parse_value(value_str) do
+      {variables, node_out_pos} = add_variable(variables, node_out_pos)
+      {variables, node_out_neg} = add_variable(variables, node_out_neg)
+      {variables, node_in_pos} = add_variable(variables, node_in_pos)
+      {variables, node_in_neg} = add_variable(variables, node_in_neg)
+
+      c = %C.VoltageControlledCurrentSource{
+        name: name,
+        node_out_pos: node_out_pos,
+        node_out_neg: node_out_neg,
+        node_in_pos: node_in_pos,
+        node_in_neg: node_in_neg,
+        gain: gain
+      }
+
+      {:ok, c, variables}
+    end
+  end
+
   for {prefix, model} <- [
         {"E", C.VoltageControlledVoltageSource},
-        {"F", C.CurrentControlledVoltageSource},
-        {"G", C.VoltageControlledCurrentSource}
+        {"F", C.CurrentControlledCurrentSource}
       ] do
     def parse(
           [

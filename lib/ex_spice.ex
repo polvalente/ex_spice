@@ -78,7 +78,7 @@ defmodule ExSpice do
 
     yn =
       Enum.reduce(netlist.components, Nx.broadcast(0, shape), fn component, yn ->
-        ExSpice.Component.DC.as_tensor(component, shape)
+        ExSpice.Component.dc_stamp(component, shape)
         |> Nx.add(yn)
       end)
 

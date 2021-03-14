@@ -1,8 +1,8 @@
 defmodule ExSpice.Components.OpAmp do
   defstruct [:name, :node_out_pos, :node_out_neg, :node_in_pos, :node_in_neg, :current]
 
-  defimpl ExSpice.Component.DC, for: __MODULE__ do
-    def as_tensor(
+  defimpl ExSpice.Component, for: __MODULE__ do
+    def dc_stamp(
           %{
             node_out_pos: node_out_pos,
             node_out_neg: node_out_neg,
@@ -24,6 +24,29 @@ defmodule ExSpice.Components.OpAmp do
         end)
       end)
       |> Nx.tensor()
+    end
+
+    def to_string(
+          %{
+            name: name,
+            node_out_pos: node_out_pos,
+            node_out_neg: node_out_neg,
+            node_in_pos: node_in_pos,
+            node_in_neg: node_in_neg
+          },
+          netlist
+        ) do
+      [
+        name,
+        " ",
+        ExSpice.Netlist.translate_node(netlist, node_out_pos),
+        " ",
+        ExSpice.Netlist.translate_node(netlist, node_out_neg),
+        " ",
+        ExSpice.Netlist.translate_node(netlist, node_in_pos),
+        " ",
+        ExSpice.Netlist.translate_node(netlist, node_in_neg)
+      ]
     end
   end
 end
