@@ -3,6 +3,9 @@ defmodule ExSpice.Components.VoltageControlledCurrentSource do
   @moduledoc """
   Current Controlled Voltage Source
 
+  Output current flows from `:node_out_neg` to `:node_out_pos`,
+  given the value `gain * (node_in_pos - node_in_neg)`
+
   Netlist format: `#{@format}`
   """
 
@@ -25,10 +28,10 @@ defmodule ExSpice.Components.VoltageControlledCurrentSource do
       Enum.map(0..(rows - 1), fn row ->
         Enum.map(0..(cols - 1), fn col ->
           case {row, col} do
-            {^node_out_pos, ^node_in_pos} -> gain
-            {^node_out_neg, ^node_in_neg} -> gain
-            {^node_out_pos, ^node_in_neg} -> -gain
-            {^node_out_neg, ^node_in_pos} -> -gain
+            {^node_out_pos, ^node_in_pos} -> -gain
+            {^node_out_neg, ^node_in_neg} -> -gain
+            {^node_out_pos, ^node_in_neg} -> gain
+            {^node_out_neg, ^node_in_pos} -> gain
             _ -> 0
           end
         end)

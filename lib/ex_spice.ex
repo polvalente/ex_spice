@@ -48,6 +48,8 @@ defmodule ExSpice do
   * [Resistor](`#{C.Resistor}`)   -  `#{C.Resistor.format()}`
   * [Capacitor](`#{C.Capacitor}`)   -  `#{C.Capacitor.format()}`
   * [Inductor](`#{C.Inductor}`)   -  `#{C.Inductor.format()}`
+  * [Voltage Source](`#{C.VoltageSource}`)   -  `#{C.VoltageSource.format()}`
+  * [Current Source](`#{C.CurrentSource}`)   -  `#{C.CurrentSource.format()}`
   * [Transformer](`#{C.Transformer}`)   -  `#{C.Transformer.format()}`
   * [OpAmp](`#{C.OpAmp}`)   -  `#{C.OpAmp.format()}`
   * [C.C.C.S.](`#{CCCS}`) - `#{CCCS.format()}`

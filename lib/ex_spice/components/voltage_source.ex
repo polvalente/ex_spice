@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.VoltageSource do
+  @format "V<name> <node +> <node -> <value>"
+  @moduledoc """
+  Voltage Source
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [:name, :value, :node_pos, :node_neg, :current]
 
   defimpl ExSpice.Component, for: __MODULE__ do

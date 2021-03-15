@@ -1,4 +1,14 @@
 defmodule ExSpice.Components.CurrentSource do
+  @format "I<name> <node +> <node -> <value>"
+  @moduledoc """
+  Current Source
+
+  Netlist format: `#{@format}`
+  """
+
+  @doc false
+  def format, do: @format
+
   defstruct [:name, :value, :node_pos, :node_neg]
 
   defimpl ExSpice.Component, for: __MODULE__ do

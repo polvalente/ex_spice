@@ -355,8 +355,56 @@ defmodule ExSpiceTest do
                Nx.round(solution)
     end
 
-    test "VCCS"
-    test "Diode"
+    test "VCCS" do
+      #                   1
+      #  1_____       2__r2____3
+      #  |    |      |         |
+      #  r1=1 V=2    G=10*V10  r3 = 1
+      #  |    |      |         |
+      #  g    g      g         g
+
+      netlist = """
+      R1 1 0 1
+      V1 1 0 2
+      G1 2 0 1 0 10
+      R2 2 3 1
+      R3 3 0 1
+      """
+
+      assert %ExSpice.Netlist{
+               components: [
+                 %ExSpice.Components.Resistor{name: "R3", nodes: [4, 0], value: 1.0},
+                 %ExSpice.Components.Resistor{name: "R2", nodes: [3, 4], value: 1.0},
+                 %ExSpice.Components.VoltageControlledCurrentSource{
+                   gain: 10.0,
+                   name: "G1",
+                   node_in_neg: 0,
+                   node_in_pos: 1,
+                   node_out_neg: 0,
+                   node_out_pos: 3
+                 },
+                 %ExSpice.Components.VoltageSource{
+                   current: 2,
+                   name: "V1",
+                   node_neg: 0,
+                   node_pos: 1,
+                   value: 2.0
+                 },
+                 %ExSpice.Components.Resistor{name: "R1", nodes: [1, 0], value: 1.0}
+               ],
+               solution: solution,
+               variables: variables
+             } = netlist |> ExSpice.parse() |> ExSpice.simulate(mode: :dc)
+
+      assert %{"0" => 0, "1" => 1, "2" => 3, "3" => 4, "jV1" => 2} == variables
+
+      assert Nx.round(Nx.tensor([0.0, 2.0, -2.0, 40.0, 20.0])) ==
+               Nx.round(solution)
+    end
+
+    test "Diode" do
+    end
+
     test "Transformer"
   end
 end
