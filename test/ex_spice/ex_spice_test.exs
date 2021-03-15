@@ -289,7 +289,72 @@ defmodule ExSpiceTest do
                Nx.round(solution)
     end
 
-    test "CCVS"
+    test "CCVS" do
+      #                1
+      #  1_2___     3__r2______4
+      #  |    |      |         |
+      #  r1=1 V=2    H=10*I12  r3 = 1
+      #  |    |      |         |
+      #  g    g      g         g
+
+      netlist = """
+      R1 1 0 1
+      V1 2 0 2
+      H1 0 3 1 2 10
+      R2 3 4 1
+      R3 4 0 1
+      """
+
+      assert %ExSpice.Netlist{
+               components: [
+                 %ExSpice.Components.Resistor{
+                   name: "R3",
+                   nodes: [7, 0],
+                   value: 1.0
+                 },
+                 %ExSpice.Components.Resistor{
+                   name: "R2",
+                   nodes: [4, 7],
+                   value: 1.0
+                 },
+                 %ExSpice.Components.CurrentControlledVoltageSource{
+                   gain: 10.0,
+                   name: "H1",
+                   node_in_neg: 2,
+                   node_in_pos: 1,
+                   node_out_neg: 4,
+                   node_out_pos: 0,
+                   current_in: 5,
+                   current_out: 6
+                 },
+                 %ExSpice.Components.VoltageSource{
+                   name: "V1",
+                   node_neg: 0,
+                   node_pos: 2,
+                   value: 2.0,
+                   current: 3
+                 },
+                 %ExSpice.Components.Resistor{name: "R1", nodes: [1, 0], value: 1.0}
+               ],
+               solution: solution,
+               variables: variables
+             } = netlist |> ExSpice.parse() |> ExSpice.simulate(mode: :dc)
+
+      assert %{
+               "0" => 0,
+               "1" => 1,
+               "2" => 2,
+               "jV1" => 3,
+               "3" => 4,
+               "jxH1" => 5,
+               "jyH1" => 6,
+               "4" => 7
+             } == variables
+
+      assert Nx.round(Nx.tensor([0.0, 2.0, 2.0, -2.0, 20.0, -2.0, 10.0, 10.0])) ==
+               Nx.round(solution)
+    end
+
     test "VCCS"
     test "Diode"
     test "Transformer"

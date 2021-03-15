@@ -58,7 +58,6 @@ defmodule ExSpice.Netlist do
             ]
         end)
         |> Enum.sort()
-        |> IO.inspect()
 
       ["Components:\n", components_str, "\n\nSolution:\n", solution_str]
       |> IO.iodata_to_binary()
